@@ -55,7 +55,7 @@ d2 <- read_csv("data/data2.csv")
 
 ### Data checks
 
-Do we have 26 participants?
+Do we have 26 participants? 
 
 ```{r}
 n_expect <- 26
@@ -66,6 +66,7 @@ d %>%
   nrow() == n_expect
 ```
 
+Not sure how to tell whether participants were in E1 vs. E2? 
 
 ## Step 3: Tidy data
 
