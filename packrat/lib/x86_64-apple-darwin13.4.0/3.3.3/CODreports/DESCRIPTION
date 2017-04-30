@@ -1,25 +1,26 @@
 Package: CODreports
 Title: Build reproducibility reports for the Cognition Open Data (COD)
-    project
+        project
 Version: 0.1
-Authors@R: person("Tom", "Hardwicke", email =
-    "tom.hardwicke@stanford.edu", role = c("aut", "cre"))
-Description: An Rmarkdown template and custom functions to build
-    reproducibility reports for the Cognition Open Data (COD) project.
+Authors@R: person("Tom", "Hardwicke", email = "tom.hardwicke@stanford.edu", role = c("aut", "cre"))
+Description: An Rmarkdown template and custom functions to build reproducibility reports for the Cognition Open Data (COD) project.
 Depends: R (>= 3.3.2)
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: tidyverse (>= 1.1.0), haven (>= 1.0.0), readxl (>= 0.1.1),
-    knitr (>= 1.15.1), devtools (>= 1.12.0)
+        knitr (>= 1.15.1), devtools (>= 1.12.0)
 RoxygenNote: 6.0.1
+Author: Tom Hardwicke [aut, cre]
+Maintainer: Tom Hardwicke <tom.hardwicke@stanford.edu>
+Built: R 3.3.3; ; 2017-04-30 16:41:33 UTC; unix
+RemoteType: github
+RemoteHost: https://api.github.com
+RemoteRepo: CODreports
+RemoteUsername: CognitionOpenDataProject
+RemoteRef: master
+RemoteSha: d8f3567887e79bf8c63de64f2cc2a209450180e1
 GithubRepo: CODreports
 GithubUsername: CognitionOpenDataProject
 GithubRef: master
-GithubSHA1: b5f756669cac5adee94938590bc6736c714ecf49
-Author: Tom Hardwicke [aut, cre]
-Maintainer: Tom Hardwicke <tom.hardwicke@stanford.edu>
-Built: R 3.3.3; ; 2017-04-27 17:02:20 UTC; unix
-InstallAgent: packrat 0.4.8.1
-InstallSource: github
-Hash: e237eaabba68b1216e508f5375193178
+GithubSHA1: d8f3567887e79bf8c63de64f2cc2a209450180e1
