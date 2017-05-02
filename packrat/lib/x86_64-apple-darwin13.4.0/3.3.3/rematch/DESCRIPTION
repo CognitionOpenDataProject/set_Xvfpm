@@ -4,8 +4,8 @@ Version: 1.0.1
 Author: Gabor Csardi
 Maintainer: Gabor Csardi <gcsardi@mango-solutions.com>
 Description: A small wrapper on 'regexpr' to extract the matches and
-    captured groups from the match of a regular expression to a character
-    vector.
+    captured groups from the match of a regular expression to a
+    character vector.
 License: MIT + file LICENSE
 LazyData: true
 URL: https://github.com/MangoTheCat/rematch
@@ -22,3 +22,6 @@ RemoteType: cran
 RemoteSha: 1.0.1
 RemoteRepos: structure("https://cran.rstudio.com/", .Names = "CRAN")
 RemotePkgType: mac.binary.mavericks
+InstallAgent: packrat 0.4.8.1
+InstallSource: CRAN
+Hash: ad4faf59e7611117ff165817074c50c7

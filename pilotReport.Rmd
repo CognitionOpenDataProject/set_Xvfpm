@@ -16,9 +16,21 @@ output:
 
 #### Methods summary: 
 
-> E1 examined whether the acquired memory is different depending on whether exactly the same object layout is either learned in vista or in environmental space. We predicted that knowledge acquired from environmental space preserves features of the spatio- temporal learning process, resulting in higher latency when point- ing to targets with increasing corridor distance, and recall in the order objects were encountered in. We expected recall latency and order of vista space memory to be influenced by the layout structure instead.
+In this experiment, participants learned and were tested on the location of familiar objects in a virtual room. The main experimental manipulation was whether participants learned the locations of the objects in an "Environmental Space" (ES) or a "Vista Space" (VS) as shown in Figure 1 below:
 
-> Performance in visual pointing and object placement was ascer- tained after learning an object layout either in an environmental space (ES) or in a vista space (VS).
+![](figs/stim.png)
+
+Participants completed two test tasks: pointing task (72 trials) and object placement task (1 trial). Examples of these tasks are shown in Figure 2 included below:
+
+![](figs/test_trials.png)
+
+The main dependent variable for the pointing was "pointing latency" or the time in seconds it took participants to respond. The main predictor variable (aside from condition) was "corridor distance" which could take on values from 0-3 [within the same corridor (0), to the next corridor (1), across two (2) or three corridors (3)]. 
+
+The main finding is an interaction between corridor distance and condition such that pointing latency increased as a function of corridor distance but only in the ES condition and not in the VS condition. This interaction is visualized in Figure 3 (note that orange represents the ES condition and blue represents the VS condition: 
+
+![](figs/results.png)
+
+The authors predicted that the ES condition would have higher point latencies because learning in this way "preserves features of the spatio-temporal learning process."
 
 ------
 
@@ -48,25 +60,33 @@ library(stringr)
 
 ## Step 2: Load data
 
+The authors did not indicate which data file correspond to which experimental task. But based on the trial numbers, `data2.csv` is likely the pointing task since it has so many more trials.
+
 ```{r}
 d <- read_csv("data/data1.csv")
-d2 <- read_csv("data/data2.csv")
+d2 <- read_csv("data/data2.csv") 
 ```
 
 ### Data checks
 
-Do we have 26 participants? 
+Do we have 26 participants for Experiment 1? 
 
 ```{r}
 n_expect <- 26
 
-d %>% 
+n_obtained <- d2 %>% 
   select(subjCode) %>% 
   unique() %>% 
-  nrow() == n_expect
+  nrow()
+
+n_expect_output <- n_expect == n_obtained
 ```
 
-Not sure how to tell whether participants were in E1 vs. E2? 
+The output of the expected N test is: `r n_expect_output`, meaning we do not have the expected number of participants. In `data2.csv` there are `r n_obtained` unique participants. 
+
+INSUFFICIENT INFORMATION ERROR
+
+I am not sure how to tell whether participants were in Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. And without this information, I cannot complete the reproducibility check.
 
 ## Step 3: Tidy data
 
@@ -79,7 +99,7 @@ Extract the environment condition, position condition, and presendation conditio
 5: ES, movement, object presentation successively
 
 ```{r}
-d.tidy <- d %>% 
+d.tidy <- d2 %>% 
   mutate(env_cond = ifelse(environmentCondition_VS_1to4_ES_5 %in% c(1:4), "VS", "ES"),
          pos_cond = ifelse(environmentCondition_VS_1to4_ES_5 %in% c(1:2), "static", "movement"),
          present_cond = ifelse(environmentCondition_VS_1to4_ES_5 %in% c(1,3), 
@@ -90,13 +110,9 @@ Convert numeric `Gender_Male_1_Female_2` variable to factor with meaningful labe
 
 > 1: male; 2: female
 
-
 ```{r}
 d.tidy %<>% mutate(gender = ifelse(Gender_Male_1_Female_2 == 1, "male", "female"))
 ```
-
-
-
 
 ## Step 4: Run analysis
 
@@ -135,11 +151,15 @@ Correct for nonsphercity. From the paper,
 ## Step 5: Conclusion
 
 ```{r}
+codReport(Report_Type = 'pilot',
+          Article_ID = 'Xvfpm', 
+          Insufficient_Information_Errors = 1,
+          Decision_Errors = 0, 
+          Major_Numerical_Errors = 0, 
+          Minor_Numerical_Errors = 0)
 ```
 
-[Please also include a brief text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
-
-[This function will output information about the package versions used in this report:]
+I ran into difficulty pretty early on in this reproducbility report. The issue is that I am not sure how to tell whether participants completed Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. And without this information, I couldn't complete the reproducibility check.
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()

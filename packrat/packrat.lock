@@ -11,12 +11,12 @@ Hash: 14dfb3e8ffe20996118306ff4de1fab2
 Package: CODreports
 Source: github
 Version: 0.1
-Hash: e237eaabba68b1216e508f5375193178
+Hash: 1da25123ec3756ae46871a094ebc4d37
 Requires: devtools, haven, knitr, readxl, tidyverse
 GithubRepo: CODreports
 GithubUsername: CognitionOpenDataProject
 GithubRef: master
-GithubSha1: b5f756669cac5adee94938590bc6736c714ecf49
+GithubSha1: d8f3567887e79bf8c63de64f2cc2a209450180e1
 
 Package: DBI
 Source: CRAN
@@ -74,6 +74,12 @@ Source: CRAN
 Version: 1.17.1
 Hash: 97cb6f6293cd18d17df77a6383cc6763
 Requires: bitops
+
+Package: cellranger
+Source: CRAN
+Version: 1.1.0
+Hash: 4e1ef4d099b0c5fd531a3938cf4624bd
+Requires: rematch, tibble
 
 Package: colorspace
 Source: CRAN
@@ -283,9 +289,14 @@ Requires: BH, R6, Rcpp, hms, tibble
 
 Package: readxl
 Source: CRAN
-Version: 0.1.1
-Hash: 29d41207f0536a41545dfe6fad3f941c
-Requires: Rcpp
+Version: 1.0.0
+Hash: f0d3323803148df52bca38095bccce46
+Requires: Rcpp, cellranger, tibble
+
+Package: rematch
+Source: CRAN
+Version: 1.0.1
+Hash: ad4faf59e7611117ff165817074c50c7
 
 Package: reshape2
 Source: CRAN
