@@ -16,7 +16,7 @@ output:
 
 #### Methods summary: 
 
-In this experiment, participants learned and were tested on the location of familiar objects in a virtual room. The main experimental manipulation was whether participants learned the locations of the objects in an "Environmental Space" (ES) or a "Vista Space" (VS) as shown in Figure 1 below:
+In this experiment, participants were tested on the location of familiar objects in a virtual room. The main experimental manipulation was whether participants learned the locations of the objects in an "Environmental Space" (ES) or a "Vista Space" (VS) as shown in Figure 1 below:
 
 ![](figs/stim.png)
 
@@ -86,7 +86,7 @@ The output of the expected N test is: `r n_expect_output`, meaning we do not hav
 
 INSUFFICIENT INFORMATION ERROR
 
-I am not sure how to tell whether participants were in Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. And without this information, I cannot complete the reproducibility check.
+I am not sure how to tell whether participants were in Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. Without this information, I cannot complete the reproducibility check.
 
 ## Step 3: Tidy data
 
@@ -135,7 +135,7 @@ Exclude trials. From the paper,
 
 Correct for nonsphercity. From the paper, 
 
-> All tests conducted were cor- rected for nonsphericity or inequality of variance when appropri- ate.
+> All tests conducted were corrected for nonsphericity or inequality of variance when appropriate.
 
 
 ### Descriptive statistics
@@ -159,7 +159,7 @@ codReport(Report_Type = 'pilot',
           Minor_Numerical_Errors = 0)
 ```
 
-I ran into difficulty pretty early on in this reproducbility report. The issue is that I am not sure how to tell whether participants completed Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. And without this information, I couldn't complete the reproducibility check.
+I ran into difficulty early in this reproducbility report. The issue is that I am not sure how to tell whether participants completed Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. Without this information, I couldn't complete the reproducibility check.
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
