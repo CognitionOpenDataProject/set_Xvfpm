@@ -10,12 +10,16 @@ output:
 #### Pilot: Kyle MacDonald
 #### Co-pilot: Tom Hardwicke  
 #### Start date: 7/11/17
-#### End date: [Insert end date - use US format]   
+#### End date: 7/12/17
 
 -------
 
 #### Methods summary: 
-[Write a brief summary of the methods underlying the target outcomes written in your own words]
+
+On each trial, participants heard two melodies: a "control" melody that was not modified in any way and a "manipulated" melody where either the pitch, timbre, or spatial deviance was modified programatically. The dependent measures were two 2AFC measures with the following structures:
+
+  1. "Which melody did you prefer" 
+  2. "Which melody was more unpleasant?"
 
 ------
 
@@ -45,13 +49,13 @@ library(readxl) # import excel files
 library(CODreports) # custom report functions
 library(magrittr) # for compound pipes
 library(stringr) # for working with strings
+library(BSDA)
 ```
 
 ## Step 2: Load data
 
 ```{r}
 d1 <- read_csv("data/data1.csv")
-d2 <- read_csv("data/data1.csv")
 ```
 
 Check the structure of the data.
@@ -61,6 +65,10 @@ glimpse(d1)
 ```
 
 Check how many participants we have in the data file.
+
+> Participants were 50 undergraduate students
+
+The authors did not report filtering two participants in the paper. 
 
 ```{r}
 n_e1 <- 50
@@ -91,26 +99,48 @@ Yes, but it looks like some data is filtered at the trial level, which is not me
 
 ## Step 3: Tidy data
 
-Data were already in a tidy format. 
+Data were already in a tidy format. But we need to remove the participants that were not included in the analyses. From the supplementary codebook:
+
+> Include: Whether participant data were included (1) or excluded (0) from the analysis due to technical difficulties during data collection or withdrawal from the experiment.
+
+```{r}
+d_analysis <- d1 %>% filter(Include == 1)
+```
+
 
 ## Step 4: Run analysis
 
 ### Pre-processing
 
-Average data across participants and conditions.
+Average data for each participant and condition. From the analysis plan section:
 
 > We averaged the responses across trials for each participant. This yielded (i) a proportion of trials on which participants preferred the manipulated stimulus, and (ii) a proportion of trials on which participants selected the manipulated stimulus as more pleasant.
 
-```{r}
+Note that participants' responses were coded using a 0/1 dummy coding scheme:
 
+> Preference: Binary response indicating whether (1) or not (0) the participant preferred the stimulus predicted by the Source-Dilemma Hypothesis. Unpleasantness: Binary response indicating whether (1) or not (0) the participant found more unpleasant the stimulus predicted by the Source-Dilemma Hypothesis
+
+Note that this coding schedule is a bit underspecified since we have to know the predictions of the Source-Dilemma Hypothesis to map 1 and 0 to behaviors. Here's the relevant prediction from the paper: 
+
+> We therefore predicted that manipulated melodies would be perceived as less pleasant than the standard melodies because listeners would encounter perceptual incoherence in the former.
+
+```{r}
+d_ss <- d_analysis %>% 
+  group_by(subjects, manipulation) %>% 
+  summarise(m_prefer_control = mean(Preference),
+            m_unpleasant_control = mean(Unpleasant))
 ```
 
 Classify participants by whether they preferred the manipulated or non-manipulated melodies
 
 > Because the proportion data were not normally distributed, subjects were classified as to whether they, on average, preferred the manipulated or non-manipulated melody.
 
-```{r}
+This classification scheme is a little underspecified. I interpreted "on average" to mean $M_{score} <= 0.5$ since I think "1" was coded as preferring the manipulated melodies.
 
+```{r}
+d_ss %<>% 
+  mutate(prefer_manipulated = ifelse(m_prefer_control <= 0.5, TRUE, FALSE),
+         pleasant_manipulated = ifelse(m_unpleasant_control <= 0.5, TRUE, FALSE))
 ```
 
 
@@ -119,7 +149,19 @@ Classify participants by whether they preferred the manipulated or non-manipulat
 Reproduce the values for S reported in Table 1. S refers to to the number of participants (s_preferred) out of 50 who, on average, preferred the manipulated melodies over the control melodies, and the number of participants (s_pleasant) who, on average, rated the manipulated melody as more pleasant than the control melody.
 
 ```{r}
+table1 <- d_ss %>% 
+  group_by(manipulation) %>% 
+  summarise(n_prefer_manipulated= sum(prefer_manipulated),
+            n_unpleasant_control = sum(pleasant_manipulated)) %>% 
+  mutate(manipulation = forcats::fct_recode(manipulation, 
+                                            harmonic = "H", 
+                                            spatial = "S",
+                                            timbre = "T"))
+
+table1 %>% kable()
 ```
+
+I was able to reproduce the reported values. 
 
 ### Inferential statistics
 
@@ -128,24 +170,322 @@ Perform hypothesis tests using the Sign test and BSDA package.
 > Sign tests as implemented in R (R Development Core Team, 2014) supple- mented with the BSDA package (Arnholt, 2012) were used to test whether the number of participants who exceeded an expected preference or pleasantness proportion of 0.5 was greater (or less) than expected by chance. This yields the S statistic, which is the number of participants above the expected median (i.e., with proportion scores >0.5 under the null hypothesis). Under the null hypothesis, S is equal to n/2. P-values represent the binomial probability of S statistics at least as extreme as that observed (Maxwell & Delaney, 2004).
 
 
-```{r}
+I haven't used the Sign test or BSDA package before, so I followed the steps in [this](https://onlinecourses.science.psu.edu/stat464/node/49) tutorial.
 
+  * x - is the object where you store your data
+  * md - the hypothesized median (default is 0)
+  * alternative - either "two.sided", "greater", or "less than"
+  * conf.level  - the desired confidence level. 
+
+Note that the SIGN.test function in the BSDA package does not actually return the p_values, so I created my own version of the function (following [this](https://stackoverflow.com/questions/19644695/extracting-p-value-sign-test-package-bsda-in-r) Stack Overflow post) that does in order to make this analysis fully reproducible. 
+
+```{r my sign.test fun}
+km_sign_test_fun <- function (x, y = NULL, md = 0, alternative = "two.sided", conf.level = 0.95) {
+    choices <- c("two.sided", "greater", "less")
+    alt <- pmatch(alternative, choices)
+    alternative <- choices[alt]
+    if (length(alternative) > 1 || is.na(alternative)) 
+        stop("alternative must be one \"greater\", \"less\", \"two.sided\"")
+    if (!missing(md)) 
+        if (length(md) != 1 || is.na(md)) 
+            stop("median must be a single number")
+    if (!missing(conf.level)) 
+        if (length(conf.level) != 1 || is.na(conf.level) || conf.level < 
+            0 || conf.level > 1) 
+            stop("conf.level must be a number between 0 and 1")
+    if (is.null(y)) {
+        dname <- paste(deparse(substitute(x)))
+        x <- sort(x)
+        diff <- (x - md)
+        n <- length(x)
+        nt <- length(x) - sum(diff == 0)
+        s <- sum(diff > 0)
+        estimate <- median(x)
+        method <- c("One-sample Sign-Test")
+        names(estimate) <- c("median of x")
+        names(md) <- "median"
+        names(s) <- "s"
+        CIS <- "Conf Intervals"
+        if (alternative == "less") {
+            pval <- sum(dbinom(0:s, nt, 0.5))
+            loc <- c(0:n)
+            prov <- (dbinom(loc, n, 0.5))
+            k <- loc[cumsum(prov) > (1 - conf.level)][1]
+            if (k < 1) {
+                conf.level <- (1 - (sum(dbinom(k, n, 0.5))))
+                xl <- -Inf
+                xu <- x[n]
+                ici <- c(xl, xu)
+            }
+            else {
+                ci1 <- c(-Inf, x[n - k + 1])
+                acl1 <- (1 - (sum(dbinom(0:k - 1, n, 0.5))))
+                ci2 <- c(-Inf, x[n - k])
+                acl2 <- (1 - (sum(dbinom(0:k, n, 0.5))))
+                xl <- -Inf
+                xu <- (((x[n - k + 1] - x[n - k]) * (conf.level - 
+                  acl2))/(acl1 - acl2)) + x[n - k]
+                ici <- c(xl, xu)
+            }
+        }
+        else if (alternative == "greater") {
+            pval <- (1 - sum(dbinom(0:s - 1, nt, 0.5)))
+            loc <- c(0:n)
+            prov <- (dbinom(loc, n, 0.5))
+            k <- loc[cumsum(prov) > (1 - conf.level)][1]
+            if (k < 1) {
+                conf.level <- (1 - (sum(dbinom(k, n, 0.5))))
+                xl <- x[1]
+                xu <- Inf
+                ici <- c(xl, xu)
+            }
+            else {
+                ci1 <- c(x[k], Inf)
+                acl1 <- (1 - (sum(dbinom(0:k - 1, n, 0.5))))
+                ci2 <- c(x[k + 1], Inf)
+                acl2 <- (1 - (sum(dbinom(0:k, n, 0.5))))
+                xl <- (((x[k] - x[k + 1]) * (conf.level - acl2))/(acl1 - 
+                  acl2)) + x[k + 1]
+                xu <- Inf
+                ici <- c(xl, xu)
+            }
+        }
+        else {
+            p1 <- sum(dbinom(0:s, nt, 0.5))
+            p2 <- (1 - sum(dbinom(0:s - 1, nt, 0.5)))
+            pval <- min(2 * p1, 2 * p2, 1)
+            loc <- c(0:n)
+            prov <- (dbinom(loc, n, 0.5))
+            k <- loc[cumsum(prov) > (1 - conf.level)/2][1]
+            if (k < 1) {
+                conf.level <- (1 - 2 * (sum(dbinom(k, n, 0.5))))
+                xl <- x[1]
+                xu <- x[n]
+                ici <- c(xl, xu)
+            }
+            else {
+                ci1 <- c(x[k], x[n - k + 1])
+                acl1 <- (1 - 2 * (sum(dbinom(0:k - 1, n, 0.5))))
+                ci2 <- c(x[k + 1], x[n - k])
+                acl2 <- (1 - 2 * (sum(dbinom(0:k, n, 0.5))))
+                xl <- (((x[k] - x[k + 1]) * (conf.level - acl2))/(acl1 - 
+                  acl2)) + x[k + 1]
+                xu <- (((x[n - k + 1] - x[n - k]) * (conf.level - 
+                  acl2))/(acl1 - acl2)) + x[n - k]
+                ici <- c(xl, xu)
+            }
+        }
+    }
+    else {
+        if (length(x) != length(y)) 
+            stop("Length of x must equal length of y")
+        xy <- sort(x - y)
+        diff <- (xy - md)
+        n <- length(xy)
+        nt <- length(xy) - sum(diff == 0)
+        s <- sum(diff > 0)
+        dname <- paste(deparse(substitute(x)), " and ", deparse(substitute(y)), 
+            sep = "")
+        estimate <- median(xy)
+        method <- c("Dependent-samples Sign-Test")
+        names(estimate) <- c("median of x-y")
+        names(md) <- "median difference"
+        names(s) <- "S"
+        CIS <- "Conf Intervals"
+        if (alternative == "less") {
+            pval <- sum(dbinom(0:s, nt, 0.5))
+            loc <- c(0:n)
+            prov <- (dbinom(loc, n, 0.5))
+            k <- loc[cumsum(prov) > (1 - conf.level)][1]
+            if (k < 1) {
+                conf.level <- (1 - (sum(dbinom(k, n, 0.5))))
+                xl <- -Inf
+                xu <- xy[n]
+                ici <- c(xl, xu)
+            }
+            else {
+                ci1 <- c(-Inf, xy[n - k + 1])
+                acl1 <- (1 - (sum(dbinom(0:k - 1, n, 0.5))))
+                ci2 <- c(-Inf, xy[n - k])
+                acl2 <- (1 - (sum(dbinom(0:k, n, 0.5))))
+                xl <- -Inf
+                xu <- (((xy[n - k + 1] - xy[n - k]) * (conf.level - 
+                  acl2))/(acl1 - acl2)) + xy[n - k]
+                ici <- c(xl, xu)
+            }
+        }
+        else if (alternative == "greater") {
+            pval <- (1 - sum(dbinom(0:s - 1, nt, 0.5)))
+            loc <- c(0:n)
+            prov <- (dbinom(loc, n, 0.5))
+            k <- loc[cumsum(prov) > (1 - conf.level)][1]
+            if (k < 1) {
+                conf.level <- (1 - (sum(dbinom(k, n, 0.5))))
+                xl <- xy[1]
+                xu <- Inf
+                ici <- c(xl, xu)
+            }
+            else {
+                ci1 <- c(xy[k], Inf)
+                acl1 <- (1 - (sum(dbinom(0:k - 1, n, 0.5))))
+                ci2 <- c(xy[k + 1], Inf)
+                acl2 <- (1 - (sum(dbinom(0:k, n, 0.5))))
+                xl <- (((xy[k] - xy[k + 1]) * (conf.level - acl2))/(acl1 - 
+                  acl2)) + xy[k + 1]
+                xu <- Inf
+                ici <- c(xl, xu)
+            }
+        }
+        else {
+            p1 <- sum(dbinom(0:s, nt, 0.5))
+            p2 <- (1 - sum(dbinom(0:s - 1, nt, 0.5)))
+            pval <- min(2 * p1, 2 * p2, 1)
+            loc <- c(0:n)
+            prov <- (dbinom(loc, n, 0.5))
+            k <- loc[cumsum(prov) > (1 - conf.level)/2][1]
+            if (k < 1) {
+                conf.level <- (1 - 2 * (sum(dbinom(k, n, 0.5))))
+                xl <- xy[1]
+                xu <- xy[n]
+                ici <- c(xl, xu)
+            }
+            else {
+                ci1 <- c(xy[k], xy[n - k + 1])
+                acl1 <- (1 - 2 * (sum(dbinom(0:k - 1, n, 0.5))))
+                ci2 <- c(xy[k + 1], xy[n - k])
+                acl2 <- (1 - 2 * (sum(dbinom(0:k, n, 0.5))))
+                xl <- (((xy[k] - xy[k + 1]) * (conf.level - acl2))/(acl1 - 
+                  acl2)) + xy[k + 1]
+                xu <- (((xy[n - k + 1] - xy[n - k]) * (conf.level - 
+                  acl2))/(acl1 - acl2)) + xy[n - k]
+                ici <- c(xl, xu)
+            }
+        }
+    }
+    if (k < 1) {
+        cint <- ici
+        attr(cint, "conf.level") <- conf.level
+        rval <- structure(list(statistic = s, p.value = pval, 
+            estimate = estimate, null.value = md, alternative = alternative, 
+            method = method, data.name = dname, conf.int = cint))
+        oldClass(rval) <- "htest"
+        return(rval)
+    }
+    else {
+        result1 <- c(acl2, ci2)
+        result2 <- c(conf.level, ici)
+        result3 <- c(acl1, ci1)
+        Confidence.Intervals <- round(as.matrix(rbind(result1, 
+            result2, result3)), 4)
+        cnames <- c("Conf.Level", "L.E.pt", "U.E.pt")
+        rnames <- c("Lower Achieved CI", "Interpolated CI", "Upper Achieved CI")
+        dimnames(Confidence.Intervals) <- list(rnames, cnames)
+        cint <- ici
+        attr(cint, "conf.level") <- conf.level
+        rval <- structure(list(statistic = s, parameter = NULL, 
+            p.value = pval, conf.int = cint, estimate = estimate, 
+            null.value = md, alternative = alternative, method = method, 
+            data.name = dname))
+        oldClass(rval) <- "htest"
+        #print(rval) # km commented out this print statement
+        return(list(rval, Confidence.Intervals)) # km modified this line to return the rvals
+    }
+}
 ```
+
+This is just a helper function to extract the p.values from the sign test object.
+
+```{r extract p_values fun}
+get_p_vals_sign_test <- function(data, col_name, md = 0, alternative = "two.sided", conf.level = 0.95) {
+  # get column name
+  name <- paste(col_name, "p_value", sep = "_")
+  
+  # pull relevant column from data frame
+  x <- data %>% pull(col_name)
+  results <- km_sign_test_fun(x = x, md = md, alternative = alternative, conf.level = conf.level)
+  
+  # wrap in data frame
+  r_df <- results[[1]]$p.value %>% data.frame()
+  
+  colnames(r_df) <- name
+  r_df
+}
+```
+
+Use the do() function to apply the sign test to each manipulation group in the dataset. First for the preference measure.
+
+```{r}
+p_vals_table <- d_ss %>% 
+  group_by(manipulation) %>% 
+  do(
+    get_p_vals_sign_test(data = ., col_name = "prefer_manipulated", md = 0.5, 
+                         alternative = "two.sided", conf.level = 0.95)
+  )
+```
+
+Next for the unpleasantness measure.
+
+```{r}
+p_vals_table <- d_ss %>% 
+  group_by(manipulation) %>% 
+  do(
+    get_p_vals_sign_test(data = ., col_name = "pleasant_manipulated", md = 0.5, 
+                         alternative = "two.sided", conf.level = 0.95)
+  ) %>% 
+  left_join(p_vals_table, ., by = "manipulation")
+```
+
+Join the information together in a single table and print it.
+
+```{r}
+p_vals_table %>% 
+  ungroup() %>% 
+  mutate(manipulation = forcats::fct_recode(manipulation, 
+                                            harmonic = "H", 
+                                            spatial = "S",
+                                            timbre = "T")) 
+```
+
+The p values are all really, really small, so it shouldn't make any difference for inference, but I got different values than what was reported in the paper. Here are the comparisons for the preference measure for the the experimental conditions.
+
+```{r}
+# Control vs. Harmonic preferred p.val
+compareValues(reportedValue = 2.89e-15, obtainedValue = 9.059420e-14)
+
+# Control vs. Timbre preferred p.val
+compareValues(reportedValue = 9.08e-14, obtainedValue = 9.059420e-14)
+
+# Control vs. Spatial preferred p.val
+compareValues(reportedValue = 3.63e-7, obtainedValue =1.163556e-06)
+```
+
+```{r}
+# Control vs. Harmonic preferred p.val
+compareValues(reportedValue = 2.89e-15, obtainedValue = 9.059420e-14)
+
+# Control vs. Timbre preferred p.val
+compareValues(reportedValue = 9.08e-14, obtainedValue =9.059420e-14)
+
+# Control vs. Spatial more pleasant p.val
+compareValues(reportedValue = 3.24e-8, obtainedValue =3.243741e-08)
+```
+
+I think these differences might be reporting errors since I don't see any reason why the p-value for Control vs. Harmonic (1/50) and Control vs. Timbre (1/50) should be any different. I do think that it is worth thinking about whether they should be classified as "Major" errors.
+
+INSUFFICIENT INFORMATION ERROR. I was unable to reproduce the correlational analyses because the musical training data was not included in the dataset. 
 
 ## Step 5: Conclusion
 
 ```{r}
 codReport(Report_Type = 'pilot',
           Article_ID = 'DRaKS', 
-          Insufficient_Information_Errors = 0,
+          Insufficient_Information_Errors = 1,
           Decision_Errors = 0, 
-          Major_Numerical_Errors = 0, 
-          Minor_Numerical_Errors = 0)
+          Major_Numerical_Errors = 3, 
+          Minor_Numerical_Errors = 3)
 ```
 
-[Please also include a brief text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
-
-[This function will output information about the package versions used in this report:]
+The data and codebook were both in relatively good shape. I was able to reproduce the descriptive results for the preference and the unpleasantness measures. All the results were highly signficiant, but I obtained different p-values when I used the *sign test* function in the BSDA package. My best guess is that these are reporting errors, but it's possible that I applied the function in a different way or that there are differences in the computing environment (since these values were so small this could have played a larger role). In addition to the p-value differences, there was not enough information included in the dataset to reproduce the correlations between preference/pleasantness measures and participants' musical training. In my opinion, this omission of data more important compared to the differences in p-values. 
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
