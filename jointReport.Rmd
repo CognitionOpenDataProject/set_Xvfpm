@@ -8,9 +8,9 @@ output:
 
 #### Article ID: Xvfpm
 #### Pilot: Kyle MacDonald
-#### Start date: 4/27/17
-#### End date: 7/9/17
 #### Copilot: Mike Frank
+#### Start date: 4/27/17
+#### End date: 8/10/17
 
 -------
 
