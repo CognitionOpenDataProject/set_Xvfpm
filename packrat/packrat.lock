@@ -28,6 +28,11 @@ Source: CRAN
 Version: 7.3-45
 Hash: 0650d5701aa7e369e77c9e2c8e1dc913
 
+Package: MatrixModels
+Source: CRAN
+Version: 0.4-1
+Hash: 60a5c75e57aae4a0ce76cb7422939aaf
+
 Package: R6
 Source: CRAN
 Version: 2.2.0
@@ -42,6 +47,16 @@ Package: Rcpp
 Source: CRAN
 Version: 0.12.10
 Hash: 6cf65d0dd6a92f2d43c8d4805d33efe9
+
+Package: RcppEigen
+Source: CRAN
+Version: 0.3.3.3.0
+Requires: Rcpp
+
+Package: SparseM
+Source: CRAN
+Version: 1.77
+Hash: 08f1f60e1038957030bcd9f4a58d22d8
 
 Package: assertthat
 Source: CRAN
@@ -74,6 +89,12 @@ Source: CRAN
 Version: 1.17.1
 Hash: 97cb6f6293cd18d17df77a6383cc6763
 Requires: bitops
+
+Package: car
+Source: CRAN
+Version: 2.1-5
+Hash: 3c9e1eac57d1c381f7ce9562895eb33b
+Requires: MASS, pbkrtest, quantreg
 
 Package: cellranger
 Source: CRAN
@@ -119,6 +140,12 @@ Source: CRAN
 Version: 0.10
 Hash: c3601a10c987d439e0c63ec635234a76
 Requires: stringr
+
+Package: ez
+Source: CRAN
+Version: 4.4-0
+Hash: 5591c9342327a37e4be11ebb941ec10a
+Requires: MASS, car, ggplot2, lme4, plyr, reshape2, scales, stringr
 
 Package: forcats
 Source: CRAN
@@ -202,6 +229,12 @@ Source: CRAN
 Version: 0.2.0
 Hash: 3d6e7608e65bbf5cb170dab1e3c9ed8b
 
+Package: lme4
+Source: CRAN
+Version: 1.1-13
+Hash: 2bebffc799253fd4252ff299cfa2bdad
+Requires: MASS, Rcpp, RcppEigen, lattice, minqa, nlme, nloptr
+
 Package: lubridate
 Source: CRAN
 Version: 1.6.0
@@ -230,6 +263,12 @@ Source: CRAN
 Version: 0.5
 Hash: 463550cf44fb6f0a2359368f42eebe62
 
+Package: minqa
+Source: CRAN
+Version: 1.2.4
+Hash: 6e61ec948327e6dd044ccb09cf12db8d
+Requires: Rcpp
+
 Package: mnormt
 Source: CRAN
 Version: 1.5-5
@@ -253,6 +292,11 @@ Version: 3.1-131
 Hash: 7f5580f9c481d6921298f224c391b308
 Requires: lattice
 
+Package: nloptr
+Source: CRAN
+Version: 1.0.4
+Hash: 8053df240a4635aeb54fc68c6de67709
+
 Package: openssl
 Source: CRAN
 Version: 0.9.6
@@ -262,6 +306,12 @@ Package: packrat
 Source: CRAN
 Version: 0.4.8-1
 Hash: 6ad605ba7b4b476d84be6632393f5765
+
+Package: pbkrtest
+Source: CRAN
+Version: 0.4-7
+Hash: f195c3a0f527f69c491569c5cbaaf1db
+Requires: MASS, lme4
 
 Package: plyr
 Source: CRAN
@@ -280,6 +330,12 @@ Source: CRAN
 Version: 0.2.2
 Hash: 9f218b40dee7fe7f942039f974bd98b8
 Requires: BH, Rcpp, dplyr, lazyeval, magrittr
+
+Package: quantreg
+Source: CRAN
+Version: 5.33
+Hash: 30421e83e9d36563250019b6b2adafce
+Requires: MatrixModels, SparseM
 
 Package: readr
 Source: CRAN

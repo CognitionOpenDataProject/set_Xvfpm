@@ -90,7 +90,7 @@ I am not sure how to tell whether participants were in Experiment 1 or Experimen
 
 ## Step 3: Tidy data
 
-Extract the environment condition, position condition, and presendation condition information from the `environmentCondition_VS_1to4_ES_5` variable. From the codebook, 
+Extract the environment condition, position condition, and presentation condition information from the `environmentCondition_VS_1to4_ES_5` variable. From the codebook, 
 
 > 1: VS, static position, object presentation simultaneous
 2: VS, static position, object presentation successively

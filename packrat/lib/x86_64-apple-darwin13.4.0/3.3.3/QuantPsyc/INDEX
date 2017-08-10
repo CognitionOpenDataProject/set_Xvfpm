@@ -1,0 +1,19 @@
+ClassLog                Classification for Logistic Regression
+Make.Z                  Standardize Data
+Normalize               Normalize Data
+QuantPsyc-package       Quantitative Psychology Tools
+distInd.ef              Complex Mediation for use in Bootstrapping
+distal.med              Distal Indirect Effect
+eda.uni                 Plots for Exploratory Data Analysis
+graph.mod               Moderation Graph
+lm.beta                 Standardized Regression Coefficients
+meanCenter              Mean Center Variables
+moderate.lm             Simple Moderated Regression Model
+mult.norm               Tests for Multivariate Normality
+norm                    Skewness and Kurtosis
+plotNormX               Normal Density Plot
+powerF                  Power in F distribution
+proxInd.ef              Simple Mediation for use in Bootstrapping
+proximal.med            Simple Mediation Models
+sim.slopes              Moderated Simple Slopes
+tra                     Simulated Theory of Reasoned Action Data
