@@ -4,6 +4,7 @@
 # History files
 .Rhistory
 .Rapp.history
+<<<<<<< HEAD
 # Mac folder preferences
 .DS_Store
 # Example code in package build process
@@ -20,6 +21,8 @@ vignettes/*.pdf
 # knitr and R markdown default cache directories
 /*_cache/
 /cache/
+=======
+>>>>>>> upstream/master
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
