@@ -69,6 +69,7 @@ Codebook specifies that conditions 1 and 5 are Experient 1.
 ```{r}
 d_placement <- read_csv("data/data1.csv")  %>%
   filter(environmentCondition_VS_1to4_ES_5 %in% c(1,5)) 
+
 d_pointing <- read_csv("data/data2.csv") %>%
   filter(environmentCondition_VS_1to4_ES_5 %in% c(1,5)) 
 ```
@@ -102,8 +103,7 @@ Extract the environment condition, position condition, and presendation conditio
 5: ES, movement, object presentation successively
 
 ```{r}
-d_pointing %<>% 
-  mutate(env_cond = ifelse(environmentCondition_VS_1to4_ES_5 == 1, "VS", "ES"))
+d_pointing %<>% mutate(env_cond = ifelse(environmentCondition_VS_1to4_ES_5 == 1, "VS", "ES"))
 ```
 
 Convert numeric `Gender_Male_1_Female_2` variable to factor with meaningful label. From the codebook,
@@ -142,6 +142,7 @@ We can do the same with latency, and again recover around 4%.
 
 ```{r}
 d_pointing$latency_withoutOutliers <- as.numeric(d_pointing$latency_withoutOutliers)
+
 mean(is.na(d_pointing$latency_withoutOutliers))
 ```
 
@@ -193,14 +194,24 @@ mod <- ezANOVA(data = d_model,
 
 print(mod)
 ```
+
 The degres of freedom and test statistics appear to match here, but not the p-values!
 
 ```{r}
-compareValues(mod$ANOVA[2,"p"], .008)
-compareValues(mod$ANOVA[3,"p"], 0.017)
+#compareValues(mod$ANOVA[2,"p"], .008)
+#compareValues(mod$ANOVA[3,"p"], 0.017)
 ```
 
-These errors both suggest that the repored p-values are actually higher than they ought to have been. 
+These errors both suggest that the reported p-values are actually higher than they ought to have been. 
+
+We checked with the authors and they told us that the reported p.values, "following the Greenhouse-Geisser correction." They did note that this detail was not reported in the paper. 
+
+```{r}
+compareValues(round(mod$`Sphericity Corrections`[1,"p[GG]"], 3), .008)
+compareValues(round(mod$`Sphericity Corrections`[2,"p[GG]"], 3), 0.017)
+```
+
+When we use the corrected GG p.values, we get the same results.
 
 > To further examine this interaction we regressed pointing latency onto corridor distance separately for each participant. From these regressions b was extracted. This standardized slope describes the linear change of latency with increasing corridor distance for every participant. Fig. 3, top left, depicts the individual and mean slopes for the two environmental conditions. 
 
@@ -209,6 +220,10 @@ I'm confused here about how these regressions are standardized. I tried:
 + z-scoring latency before regressing: removes units on intercept, which is inconsistent with figure 3, top left
 + z-scoring corridor_distance before regressing: this centering leads to intercepts being the mean, which is inconsistent with figure 3, top left 
 + z-scoring coefficients after regressing: leads to a different bar graph in figure 3, top right, because the two conditions will be centered around zero.
+
+We checked with the authors and they confirmed that a mix of standardized and unstandardized data were used: 
+
+> "While figure 3, left depicts unstandardized slopes (beta) for each subject and for the learning condition (VS vs. ES) the following analysis was based on the standardized beta coefficient. Also figure 3, right depicts the mean standardized beta coefficient."
 
 ```{r}
 mods <- d_model %>%
@@ -231,7 +246,6 @@ ggplot(mods, aes(x = 0, y = intercept, xend = 4,
   geom_segment(data = mod_mean,  lty = 1, size = 2) + 
   scale_color_manual(values = c("orange","blue"))
 ```
-
 Looks quite similar to the original. 
 
 ![](figs/results.png)
@@ -252,21 +266,67 @@ ggplot(mod_mean, aes(x = env_cond, y = corridor_distance, fill = env_cond)) +
     scale_fill_manual(values = c("orange","blue"))
 ```
 
+After consulting with the authors, we learned that some analyses used standardized latencies and others did not. Here we try the T-test comparing ES slopes to zero using standardized coefficients. The authors also shared R code for getting the standardized beta coefs, which we've included here.  
+
+```{r}
+lm.beta <- function (MOD) {
+  b <- summary(MOD)$coef[-1, 1]
+  sx <- sd(MOD$model[[-1]])
+  sy <- sd(MOD$model[[1]])
+  beta <- b * sx/sy
+  return(beta)
+}
+
+fit_model <- function (data_frame) {
+  lm.r <- lm(latency_withoutOutliers ~ corridor_distance, data = data_frame)
+  res <- tidy(lm.r)
+  res[3,] <- NA
+  res$term[3] <- "corridor_distance_standarizedBeta"
+  res$estimate[3] <- lm.beta(lm.r)
+  return(res)
+}
+
+mods.standard <- d_model %>%
+  group_by(subjCode, env_cond) %>%
+  do(
+   fit_model(.)
+  ) %>%
+  select(-std.error, -statistic, -p.value) %>%
+  spread(term, estimate) %>%
+  rename(intercept = `(Intercept)`)
+
+mod_mean.standard <- mods.standard %>%
+  group_by(env_cond) %>%
+  summarise(intercept = mean(intercept)/1000, 
+            corridor_distance = mean(corridor_distance)/1000, 
+            corridor_distance_standarizedBeta = mean(corridor_distance_standarizedBeta), 
+            se_dist = sd(corridor_distance) / sqrt(n()))
+```
+
 T-test comparing ES slopes to zero. This non-standardized coefficient doesn't seem to work. 
 
 ```{r}
-es_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "ES"])
-es_coef_t
-compareValues(es_coef_t$statistic, 8.15) 
+#es_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "ES"])
+#es_coef_t
+#compareValues(es_coef_t$statistic, 8.15) 
 ```
+
+```{r}
+es_coef_t <- t.test(mods.standard$corridor_distance_standarizedBeta[mods$env_cond == "ES"])
+es_coef_t
+compareValues(round(es_coef_t$statistic, 2), 8.15) 
+```
+
+When we standardize the latencies, we get a match. 
 
 > With each additional corridor pointing took on average 1.02 s (SD = 0.53) longer. 
 
 ```{r}
 mean(mods$corridor_distance[mods$env_cond == "ES"])
 sd(mods$corridor_distance[mods$env_cond == "ES"])
-compareValues(mean(mods$corridor_distance[mods$env_cond == "ES"]), 1.02)
-compareValues(sd(mods$corridor_distance[mods$env_cond == "ES"]), .53)
+
+compareValues(round(mean(mods$corridor_distance[mods$env_cond == "ES"]), 2), 1.02)
+compareValues(round(sd(mods$corridor_distance[mods$env_cond == "ES"]), 2), .53)
 ```
 
 These values both match, consistent with the use of the seconds unit (suggesting non-standardized slopes used in this descriptive). 
@@ -274,34 +334,62 @@ These values both match, consistent with the use of the seconds unit (suggesting
 > In VS, which worked as the control condition where no latency increase with ascending corridor distance was expected, the mean slope did not differ from 0, mean b = 0.02,
 
 ```{r}
-mean(mods$corridor_distance[mods$env_cond == "VS"])
-compareValues(mean(mods$corridor_distance[mods$env_cond == "VS"]), .02)
+#mean(mods$corridor_distance[mods$env_cond == "VS"])
+#compareValues(mean(mods$corridor_distance[mods$env_cond == "VS"]), .02)
 ```
 
 This mean does not match, and the lack of a unit suggests that this is the standardized coefficients again. 
+
+Let's try to get this mean using the standardized slopes.
+
+```{r}
+mean(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"])
+compareValues(round(mean(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"]), 2), .02)
+```
+
+These beta values match up when we use the model with the standardized coefficients. 
 
 > t(11) = 0.63, p = 0.542, d = 0.18. Thus, pointing did not take longer the further away targets were located with respect to corridors. 
 
 Check the t-test. 
 
 ```{r}
-vs_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "VS"])
-vs_coef_t
-compareValues(vs_coef_t$statistic, .63) 
+#vs_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "VS"])
+#vs_coef_t
+#compareValues(vs_coef_t$statistic, .63) 
 ```
 
 Again, the general inference is the same, but coefficients don't match exactly.
 
+Try using the standardized model.
+
+```{r}
+vs_coef_t <- t.test(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"])
+vs_coef_t
+compareValues(round(vs_coef_t$statistic, 2), .63) 
+```
+
+This t-statistic matches the reported value, although with a minor numerical difference
+
 > Additionally, a comparison of mean slopes between ES and VS revealed that the linear increase of latency across ascending corridor distance was higher for ES compared to VS, t(22) = −4.28, p < 0.001, ds = 1.75. 
 
 ```{r}
-both_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "VS"],
-                      mods$corridor_distance[mods$env_cond == "ES"])
-both_coef_t
-compareValues(both_coef_t$statistic, -4.28) 
+#both_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "VS"],
+#                      mods$corridor_distance[mods$env_cond == "ES"])
+#both_coef_t
+#compareValues(both_coef_t$statistic, -4.28) 
 ```
 
 Again, it looks like the standardized coefficients were used, so we get a different (in this case, stronger) result. 
+
+```{r}
+both_coef_t <- t.test(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"],
+                      mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "ES"])
+both_coef_t
+compareValues(round(both_coef_t$statistic, 2), -4.28) 
+```
+
+This t-statisic matches.
 
 > This pattern was also evident in individual slopes. Whereas in ES data of each single participant rendered a positive slope, in VS this was only the case for 7 out of 12 participants. Results suggest that in ES memory, the spatio-temporal pattern of learning was preserved and this was not due to the structure of the layout itself.
 
@@ -315,16 +403,16 @@ Both of these match.
 ## Step 5: Conclusion
 
 ```{r}
-codReport(Report_Type = 'pilot',
+codReport(Report_Type = 'joint',
           Article_ID = 'Xvfpm', 
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
-          Major_Numerical_Errors = 5, 
+          Major_Numerical_Errors = 0, 
           Minor_Numerical_Errors = 1, 
-          Author_Assistance = FALSE)
+          Author_Assistance = TRUE)
 ```
 
-I ran into difficulty early in this reproducbility report. The issue is that I am not sure how to tell whether participants completed Experiment 1 or Experiment 2 since this information does not seem to be encoded in the data file. Without this information, I couldn't complete the reproducibility check.
+After consulting with the authors, we were able to reproduce all of the target outcomes. There was one remaining minor numerical error that is likely due to a rounding mistake. We should note that the original authors were very responsive and helpful, sharing R code to fit the standardized vs. unstandardized models. 
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
