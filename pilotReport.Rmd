@@ -8,7 +8,6 @@ output:
 
 #### Article ID: Xvfpm
 #### Pilot: Kyle MacDonald
-#### Co-pilot: Tom Hardwicke  
 #### Start date: 4/27/17
 #### End date: [Insert end date - use US format]   
 -------
