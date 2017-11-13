@@ -9,8 +9,10 @@ output:
 #### Article ID: Xvfpm
 #### Pilot: Kyle MacDonald
 #### Copilot: Mike Frank
-#### Start date: 4/27/17
-#### End date: 8/10/17
+#### Start date: Apr 27 2017
+#### End date: Aug 10 2017
+#### Final verification: Tom Hardwicke
+#### Date: Nov 13 2017
 
 -------
 
@@ -44,6 +46,9 @@ For this article you should focus on the findings reported in section 2.2.1. Spe
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+
+# prepare an empty report object, we will update this each time we run compareValues2()
+reportObject <- data.frame("Article_ID" = NA, "valuesChecked" = 0, "eyeballs" = 0, "Total_df" = 0, "Total_p" = 0, "Total_mean" = 0, "Total_sd" = 0, "Total_se" = 0, "Total_ci" = 0, "Total_bf" = 0, "Total_t" = 0, "Total_F" = 0, "Total_es" = 0, "Total_median" = 0, "Total_irr" = 0, "Total_r" = 0, "Total_z" = 0, "Total_coeff" = 0, "Total_n" = 0, "Total_x2" = 0, "Total_other" = 0, "Insufficient_Information_Errors" = 0, "Decision_Errors" = 0, "Major_Numerical_Errors" = 0, "Minor_Numerical_Errors" = 0, "Major_df" = 0, "Major_p" = 0, "Major_mean" = 0, "Major_sd" = 0, "Major_se" = 0, "Major_ci" = 0, "Major_bf" = 0, "Major_t" = 0, "Major_F" = 0, "Major_es" = 0, "Major_median" = 0, "Major_irr" = 0, "Major_r" = 0, "Major_z" = 0, "Major_coeff" = 0, "Major_n" = 0, "Major_x2" = 0, "Major_other" = 0, "affectsConclusion" = NA, "error_typo" = 0, "error_specification" = 0, "error_analysis" = 0, "error_data" = 0, "error_unidentified" = 0, "Author_Assistance" = NA, "resolved_typo" = 0, "resolved_specification" = 0, "resolved_analysis" = 0, "resolved_data" = 0, "correctionSuggested" = NA, "correctionPublished" = NA)
 ```
 
 ## Step 1: Load packages
@@ -94,7 +99,7 @@ We recover the expected number of participants for both.
 
 ## Step 3: Tidy data
 
-Extract the environment condition, position condition, and presendation condition information from the `environmentCondition_VS_1to4_ES_5` variable. From the codebook, 
+Extract the environment condition, position condition, and presentation condition information from the `environmentCondition_VS_1to4_ES_5` variable. From the codebook, 
 
 > 1: VS, static position, object presentation simultaneous
 2: VS, static position, object presentation successively
@@ -133,18 +138,25 @@ These outliers are likely removed in the variable `absoluteError_withoutOutliers
 ```{r}
 d_pointing$absoluteError_withoutOutliers <- as.numeric(d_pointing$absoluteError_withoutOutliers)
 
-mean(is.na(d_pointing$absoluteError_withoutOutliers))
+dataExcluded <- mean(is.na(d_pointing$absoluteError_withoutOutliers))
+
+dataExcluded 
+
+# reportObject <- compareValues2(reportedValue = "4", obtainedValue = dataExcluded*100, valueType = 'n')
 ```
 
-This a MINOR NUMERICAL ERROR from the 4% figure (likely due to rounding error).
+This a difference from the 4% figure here, but the authors do say "approxiately 4%", and performance could also included latency below.
 
 We can do the same with latency, and again recover around 4%.
 
 ```{r}
 d_pointing$latency_withoutOutliers <- as.numeric(d_pointing$latency_withoutOutliers)
 
-mean(is.na(d_pointing$latency_withoutOutliers))
+dataExcluded <- mean(is.na(d_pointing$latency_withoutOutliers))
+
+# reportObject <- compareValues2(reportedValue = "4", obtainedValue = dataExcluded*100, valueType = 'n')
 ```
+So we will not consider these errors (hence commented out) because although they are vaugely described, they do not appear to be inaccurately described.
 
 ### Inferential statistics
 
@@ -195,11 +207,11 @@ mod <- ezANOVA(data = d_model,
 print(mod)
 ```
 
-The degres of freedom and test statistics appear to match here, but not the p-values!
+The degrees of freedom and test statistics appear to match here, but not the p-values!
 
 ```{r}
-#compareValues(mod$ANOVA[2,"p"], .008)
-#compareValues(mod$ANOVA[3,"p"], 0.017)
+#reportObject <- compareValues2(mod$ANOVA[2,"p"], .008)
+#reportObject <- compareValues2(mod$ANOVA[3,"p"], 0.017)
 ```
 
 These errors both suggest that the reported p-values are actually higher than they ought to have been. 
@@ -207,11 +219,11 @@ These errors both suggest that the reported p-values are actually higher than th
 We checked with the authors and they told us that the reported p.values, "following the Greenhouse-Geisser correction." They did note that this detail was not reported in the paper. 
 
 ```{r}
-compareValues(round(mod$`Sphericity Corrections`[1,"p[GG]"], 3), .008)
-compareValues(round(mod$`Sphericity Corrections`[2,"p[GG]"], 3), 0.017)
+reportObject <- compareValues2(reportedValue = ".008", mod$`Sphericity Corrections`[1,"p[GG]"], valueType = 'p')
+reportObject <- compareValues2(reportedValue = "0.017", mod$`Sphericity Corrections`[2,"p[GG]"], valueType = 'p')
 ```
 
-When we use the corrected GG p.values, we get the same results.
+When we use the corrected GG p.values, we can reproduce the results.
 
 > To further examine this interaction we regressed pointing latency onto corridor distance separately for each participant. From these regressions b was extracted. This standardized slope describes the linear change of latency with increasing corridor distance for every participant. Fig. 3, top left, depicts the individual and mean slopes for the two environmental conditions. 
 
@@ -308,13 +320,13 @@ T-test comparing ES slopes to zero. This non-standardized coefficient doesn't se
 ```{r}
 #es_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "ES"])
 #es_coef_t
-#compareValues(es_coef_t$statistic, 8.15) 
+#reportObject <- compareValues2(es_coef_t$statistic, 8.15) 
 ```
 
 ```{r}
 es_coef_t <- t.test(mods.standard$corridor_distance_standarizedBeta[mods$env_cond == "ES"])
 es_coef_t
-compareValues(round(es_coef_t$statistic, 2), 8.15) 
+reportObject <- compareValues2(reportedValue = "8.15", es_coef_t$statistic, 't') 
 ```
 
 When we standardize the latencies, we get a match. 
@@ -322,11 +334,8 @@ When we standardize the latencies, we get a match.
 > With each additional corridor pointing took on average 1.02 s (SD = 0.53) longer. 
 
 ```{r}
-mean(mods$corridor_distance[mods$env_cond == "ES"])
-sd(mods$corridor_distance[mods$env_cond == "ES"])
-
-compareValues(round(mean(mods$corridor_distance[mods$env_cond == "ES"]), 2), 1.02)
-compareValues(round(sd(mods$corridor_distance[mods$env_cond == "ES"]), 2), .53)
+reportObject <- compareValues2(reportedValue = "1.02", obtainedValue = mean(mods$corridor_distance[mods$env_cond == "ES"]), valueType = 'mean')
+reportObject <- compareValues2(reportedValue = ".53", obtainedValue = sd(mods$corridor_distance[mods$env_cond == "ES"]), valueType = 'sd')
 ```
 
 These values both match, consistent with the use of the seconds unit (suggesting non-standardized slopes used in this descriptive). 
@@ -335,7 +344,7 @@ These values both match, consistent with the use of the seconds unit (suggesting
 
 ```{r}
 #mean(mods$corridor_distance[mods$env_cond == "VS"])
-#compareValues(mean(mods$corridor_distance[mods$env_cond == "VS"]), .02)
+#reportObject <- compareValues2(mean(mods$corridor_distance[mods$env_cond == "VS"]), .02)
 ```
 
 This mean does not match, and the lack of a unit suggests that this is the standardized coefficients again. 
@@ -343,8 +352,7 @@ This mean does not match, and the lack of a unit suggests that this is the stand
 Let's try to get this mean using the standardized slopes.
 
 ```{r}
-mean(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"])
-compareValues(round(mean(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"]), 2), .02)
+reportObject <- compareValues2(reportedValue = ".02", mean(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"]), valueType = 'coeff')
 ```
 
 These beta values match up when we use the model with the standardized coefficients. 
@@ -356,7 +364,7 @@ Check the t-test.
 ```{r}
 #vs_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "VS"])
 #vs_coef_t
-#compareValues(vs_coef_t$statistic, .63) 
+#reportObject <- compareValues2(vs_coef_t$statistic, .63) 
 ```
 
 Again, the general inference is the same, but coefficients don't match exactly.
@@ -365,8 +373,7 @@ Try using the standardized model.
 
 ```{r}
 vs_coef_t <- t.test(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"])
-vs_coef_t
-compareValues(round(vs_coef_t$statistic, 2), .63) 
+reportObject <- compareValues2(reportedValue = ".63", vs_coef_t$statistic, 't') 
 ```
 
 This t-statistic matches the reported value, although with a minor numerical difference
@@ -377,7 +384,7 @@ This t-statistic matches the reported value, although with a minor numerical dif
 #both_coef_t <- t.test(mods$corridor_distance[mods$env_cond == "VS"],
 #                      mods$corridor_distance[mods$env_cond == "ES"])
 #both_coef_t
-#compareValues(both_coef_t$statistic, -4.28) 
+#reportObject <- compareValues2(both_coef_t$statistic, -4.28) 
 ```
 
 Again, it looks like the standardized coefficients were used, so we get a different (in this case, stronger) result. 
@@ -385,8 +392,7 @@ Again, it looks like the standardized coefficients were used, so we get a differ
 ```{r}
 both_coef_t <- t.test(mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "VS"],
                       mods.standard$corridor_distance_standarizedBeta[mods.standard$env_cond == "ES"])
-both_coef_t
-compareValues(round(both_coef_t$statistic, 2), -4.28) 
+reportObject <- compareValues2(reportedValue = "-4.28", obtainedValue = both_coef_t$statistic, valueType = 't') 
 ```
 
 This t-statisic matches.
@@ -394,25 +400,66 @@ This t-statisic matches.
 > This pattern was also evident in individual slopes. Whereas in ES data of each single participant rendered a positive slope, in VS this was only the case for 7 out of 12 participants. Results suggest that in ES memory, the spatio-temporal pattern of learning was preserved and this was not due to the structure of the layout itself.
 
 ```{r}
-compareValues(sum(mods$corridor_distance[mods$env_cond == "VS"] > 0), 7)
-compareValues(sum(mods$corridor_distance[mods$env_cond == "ES"] > 0), 12)
+reportObject <- compareValues2(reportedValue = "7", sum(mods$corridor_distance[mods$env_cond == "VS"] > 0), valueType = 'n')
+reportObject <- compareValues2(reportedValue = "12", sum(mods$corridor_distance[mods$env_cond == "ES"] > 0), valueType = 'n')
 ```
 
 Both of these match. 
 
 ## Step 5: Conclusion
 
+We encountered errors at first but were able to resolve them with assistance from the original authors who were very responsive and helpful. After consulting with the authors, we were able to reproduce all of the target outcomes. They pointed out that a Greenhouse-Geisser correction had been applied to the ANOVA outcomes (not reported in the paper) and agreed that the specificiation of standardized vs. unstandardized coefficients was not clearly outlined in the paper. The authors shared R code with which we could fit the standardized vs. unstandardized models.
+
 ```{r}
-codReport(Report_Type = 'joint',
-          Article_ID = 'Xvfpm', 
-          Insufficient_Information_Errors = 0,
-          Decision_Errors = 0, 
-          Major_Numerical_Errors = 0, 
-          Minor_Numerical_Errors = 1, 
-          Author_Assistance = TRUE)
+reportObject$Article_ID <- "Xvfpm"
+reportObject$affectsConclusion <- "no"
+reportObject$error_typo <- 0
+reportObject$error_specification <- 0
+reportObject$error_analysis <- 0
+reportObject$error_data <- 0
+reportObject$error_unidentified <- 0
+reportObject$Author_Assistance <- T
+reportObject$resolved_typo <- 0
+reportObject$resolved_specification <- 2
+reportObject$resolved_analysis <- 0
+reportObject$resolved_data <- 0
+reportObject$correctionSuggested <- "no"
+reportObject$correctionPublished <- F
+
+# decide on final outcome
+if(reportObject$Decision_Errors > 0 | reportObject$Major_Numerical_Errors > 0 | reportObject$Insufficient_Information_Errors > 0){
+  reportObject$finalOutcome <- "Failure"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  reportObject$finalOutcome <- "Success"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Success with author assistance"
+  }
+}
+
+# save the report object
+filename <- paste0("reportObject_", reportObject$Article_ID,".csv")
+write_csv(reportObject, filename)
 ```
 
-After consulting with the authors, we were able to reproduce all of the target outcomes. There was one remaining minor numerical error that is likely due to a rounding mistake. We should note that the original authors were very responsive and helpful, sharing R code to fit the standardized vs. unstandardized models. 
+## Report Object
+
+```{r, echo = FALSE}
+# display report object in chunks
+kable(reportObject[2:10], align = 'l')
+kable(reportObject[11:20], align = 'l')
+kable(reportObject[21:25], align = 'l')
+kable(reportObject[26:30], align = 'l')
+kable(reportObject[31:35], align = 'l')
+kable(reportObject[36:40], align = 'l')
+kable(reportObject[41:45], align = 'l')
+kable(reportObject[46:51], align = 'l')
+kable(reportObject[52:57], align = 'l')
+```
+
+## Session information
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
