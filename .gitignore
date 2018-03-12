@@ -1,4 +1,4 @@
-# history folder
+#. History folder
 history/
 
 # Session Data files
@@ -7,29 +7,40 @@ history/
 # History files
 .Rhistory
 .Rapp.history
-<<<<<<< HEAD
+
 # Mac folder preferences
 .DS_Store
+
 # Example code in package build process
 *-Ex.R
+
 # Output files from R CMD build
 /*.tar.gz
+
 # Output files from R CMD check
 /*.Rcheck/
+
+# article
+article.pdf
+
 # RStudio files
 .Rproj.user/
+*.Rproj
+
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+
 # knitr and R markdown default cache directories
 /*_cache/
 /cache/
-=======
->>>>>>> upstream/master
+
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
 .Rproj.user
+
 # Packrat files
 tests/testthat/packrat/
 packrat-scenario*/
+packrat/lib*/
